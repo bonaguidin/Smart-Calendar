@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Calendar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="calendar">
+            <div class="calendar-header">
+                <button id="themeToggle" class="theme-toggle">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <button id="prevMonth">&lt;</button>
+                <h2 id="monthDisplay"></h2>
+                <button id="nextMonth">&gt;</button>
+            </div>
+            <div class="weekdays">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+            </div>
+            <div id="calendar-days" class="calendar-grid">
+                <!-- Days will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Add Task</h2>
+            <form id="taskForm">
+                <input type="hidden" id="taskId">
+                <div class="form-group">
+                    <label for="taskTitle">Title:</label>
+                    <input type="text" id="taskTitle" required>
+                </div>
+                <div class="form-group date-range">
+                    <div>
+                        <label for="taskStartDate">Start Date:</label>
+                        <input type="date" id="taskStartDate" required>
+                    </div>
+                    <div>
+                        <label for="taskEndDate">End Date:</label>
+                        <input type="date" id="taskEndDate">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="taskTime">Time:</label>
+                    <input type="time" id="taskTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="taskColor">Color:</label>
+                    <div class="color-picker">
+                        <div class="color-option" data-color="#007bff" style="background-color: #007bff"></div>
+                        <div class="color-option" data-color="#28a745" style="background-color: #28a745"></div>
+                        <div class="color-option" data-color="#dc3545" style="background-color: #dc3545"></div>
+                        <div class="color-option" data-color="#ffc107" style="background-color: #ffc107"></div>
+                        <div class="color-option" data-color="#17a2b8" style="background-color: #17a2b8"></div>
+                        <div class="color-option" data-color="#6f42c1" style="background-color: #6f42c1"></div>
+                    </div>
+                    <input type="hidden" id="taskColor" value="#007bff">
+                </div>
+                <div class="form-group">
+                    <label for="taskDescription">Description:</label>
+                    <textarea id="taskDescription"></textarea>
+                </div>
+                <div class="form-buttons">
+                    <button type="submit">Save</button>
+                    <button type="button" id="deleteTask" style="display: none;">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+</body>
+</html>
