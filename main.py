@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime
 import json
+from llm_handler import parse_tasks_from_input
 
 app = Flask(__name__)
 
@@ -19,19 +20,57 @@ def get_tasks():
 @app.route('/api/tasks', methods=['POST'])
 def add_task():
     task = request.json
+    print("Received task data:", task)  # Debug log
     date = task['date']
     if date not in tasks:
         tasks[date] = []
-    tasks[date].append({
+    
+    # Create task with optional fields
+    new_task = {
         'id': len(tasks[date]),
         'title': task['title'],
         'description': task['description'],
-        'time': task['time'],
-        'color': task.get('color', '#007bff'),  # Add default color if none provided
+        'time': task.get('time', ''),  # Optional time
+        'color': task.get('color', '#007bff'),
         'startDate': task.get('startDate', date),
-        'endDate': task.get('endDate', date)
-    })
+        'endDate': task.get('endDate', '')  # Optional end date
+    }
+    
+    tasks[date].append(new_task)
+    print("Stored task:", new_task)  # Debug log
     return jsonify({'success': True})
+
+@app.route('/api/parse-task', methods=['POST'])
+def parse_task():
+    try:
+        data = request.json
+        user_input = data.get('input')
+        start_date = data.get('startDate')  # Get start date from request
+        
+        print("Received user input:", user_input)
+        print("Start date:", start_date)
+        
+        if not user_input:
+            return jsonify({'error': 'No input provided'}), 400
+
+        # Parse the task using the LLM handler with start date
+        task_details = parse_tasks_from_input(user_input, start_date)
+        print("LLM parsed task details:", task_details)
+        
+        formatted_task = {
+            'title': task_details['description'],
+            'description': task_details['description'],
+            'startDate': task_details['start_date'],
+            'endDate': task_details.get('end_date', ''),
+            'color': task_details['color'],
+            'time': ''
+        }
+        
+        print("Formatted task response:", formatted_task)
+        return jsonify(formatted_task)
+    except Exception as e:
+        print(f"Error in parse_task endpoint: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/tasks/<date>/<int:task_id>', methods=['PUT'])
 def update_task(date, task_id):

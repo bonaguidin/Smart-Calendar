@@ -36,6 +36,9 @@ class Calendar {
                 this.modal.style.display = "none";
             }
         };
+
+        // Add natural language parsing
+        document.getElementById('parseTask').addEventListener('click', () => this.handleNaturalLanguageInput());
     }
 
     async loadTasks() {
@@ -106,15 +109,15 @@ class Calendar {
 
     showTaskModal(date, taskId = null) {
         event.stopPropagation();
+        console.log("Opening modal for date:", date, "taskId:", taskId); // Debug log
         const task = taskId !== null ? this.tasks[date].find(t => t.id === taskId) : null;
         
         document.getElementById('modalTitle').textContent = task ? 'Edit Task' : 'Add Task';
         document.getElementById('taskId').value = taskId !== null ? taskId : '';
         
-        // Format the date properly for the date inputs
-        const formattedDate = this.formatDateForInput(date);
-        document.getElementById('taskStartDate').value = task ? task.startDate : formattedDate;
-        document.getElementById('taskEndDate').value = task ? task.endDate : formattedDate;
+        // Use the date directly without formatting
+        document.getElementById('taskStartDate').value = task ? task.startDate : date;
+        document.getElementById('taskEndDate').value = task ? task.endDate : date;
         
         document.getElementById('taskTitle').value = task ? task.title : '';
         document.getElementById('taskTime').value = task ? task.time : '';
@@ -132,41 +135,58 @@ class Calendar {
 
     async handleTaskSubmit(e) {
         e.preventDefault();
-    
-        const taskId = document.getElementById('taskId').value;
-    
-        // Parse input dates as local dates
-        const startDate = new Date(`${document.getElementById('taskStartDate').value}T00:00:00`);
-        const endDate = new Date(`${document.getElementById('taskEndDate').value || document.getElementById('taskStartDate').value}T00:00:00`);
+        console.log("Form submission started");
 
-        // Add 1 day to compensate for the timezone offset issue
+        const taskId = document.getElementById('taskId').value;
+        const startDate = new Date(document.getElementById('taskStartDate').value);
+        const endDate = document.getElementById('taskEndDate').value 
+            ? new Date(document.getElementById('taskEndDate').value) 
+            : startDate;
+        const time = document.getElementById('taskTime').value || '';
+
         startDate.setDate(startDate.getDate() + 1);
         endDate.setDate(endDate.getDate() + 1);
 
+        console.log("Form values:", { startDate, endDate, time, taskId });
+
         const task = {
             title: document.getElementById('taskTitle').value,
-            time: document.getElementById('taskTime').value,
+            time: time,
             description: document.getElementById('taskDescription').value,
             color: document.getElementById('taskColor').value,
-            startDate: startDate.toISOString().split('T')[0],
+            startDate: startDate.toISOString().split('T')[0], // YYYY-MM-DD in local time
             endDate: endDate.toISOString().split('T')[0]
         };
-    
+
+        console.log("Task object created:", task);
+
         try {
-            const dates = this.getDatesBetween(task.startDate, task.endDate);
+            const dates = endDate ? this.getDatesBetween(startDate, endDate) : [startDate];
+            console.log("Dates to create tasks for:", dates);
+
             for (const date of dates) {
                 const url = taskId ? 
                     `/api/tasks/${date}/${taskId}` : 
                     '/api/tasks';
                 const method = taskId ? 'PUT' : 'POST';
-    
-                await fetch(url, {
+
+                console.log(`Making ${method} request to ${url}`);
+                
+                const response = await fetch(url, {
                     method: method,
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({...task, date: date})
+                    body: JSON.stringify({
+                        ...task,
+                        date: date,  // Use the same date for both storage and display
+                        startDate: date,  // Ensure startDate matches the current date
+                        endDate: endDate || date  // If no endDate, use the current date
+                    })
                 });
+
+                const result = await response.json();
+                console.log(`Server response for ${date}:`, result);
             }
-    
+
             await this.loadTasks();
             this.modal.style.display = "none";
         } catch (error) {
@@ -175,37 +195,50 @@ class Calendar {
     }
 
     async handleTaskDelete() {
-        // Get date from startDate input instead of the removed taskDate input
-        const date = new Date(document.getElementById('taskStartDate').value);
         const taskId = document.getElementById('taskId').value;
+        // Get the date from the tasks object where the task actually exists
+        let taskDate = null;
         
+        // Find the actual date where the task exists
+        for (const [date, tasks] of Object.entries(this.tasks)) {
+            if (tasks.find(t => t.id === parseInt(taskId))) {
+                taskDate = date;
+                break;
+            }
+        }
+        
+        console.log("Found task to delete:", { taskDate, taskId }); // Debug log
+        
+        if (!taskDate || !taskId) {
+            console.error('Missing required data for deletion');
+            return;
+        }
+
         if (confirm('Are you sure you want to delete this task?')) {
             try {
-                // If it's a recurring task, delete from all dates
-                const endDate = document.getElementById('taskEndDate').value;
-                if (endDate) {
-                    const dates = this.getDatesBetween(date, endDate);
-                    for (const d of dates) {
-                        await fetch(`/api/tasks/${d}/${taskId}`, {
-                            method: 'DELETE'
-                        });
-                    }
-                } else {
-                    await fetch(`/api/tasks/${date}/${taskId}`, {
-                        method: 'DELETE'
-                    });
+                // Handle single task deletion
+                console.log(`Attempting to delete task for date: ${taskDate}`);
+                const response = await fetch(`/api/tasks/${taskDate}/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to delete task. Server returned ${response.status}`);
                 }
                 
                 await this.loadTasks();
                 this.modal.style.display = "none";
             } catch (error) {
                 console.error('Error deleting task:', error);
+                alert('Failed to delete task. Please try again.');
             }
         }
     }
 
     formatDate(year, month, day) {
-        return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        // Use the local time to create a date string
+        const localDate = new Date(year, month, day);
+        return localDate.toISOString().split('T')[0]; // Returns YYYY-MM-DD in local time
     }
 
     previousMonth() {
@@ -280,8 +313,9 @@ class Calendar {
 
     // Simplify formatDateForInput to handle the date correctly
     formatDateForInput(dateStr) {
-        const date = new Date(dateStr);
-        return date.toISOString().split('T')[0]; // Always return the date in ISO format
+        // Ensure the date string remains in local time
+        const localDate = new Date(dateStr);
+        return localDate.toISOString().split('T')[0];
     }
 
     // Simplify adjustDateForStorage to just return the formatted date
@@ -295,6 +329,62 @@ class Calendar {
         const g = parseInt(hex.slice(3, 5), 16);
         const b = parseInt(hex.slice(5, 7), 16);
         return `${r}, ${g}, ${b}`;
+    }
+
+    async handleNaturalLanguageInput() {
+        const input = document.getElementById('nlInput').value;
+        if (!input) return;
+
+        console.log("Natural language input:", input);
+
+        try {
+            // Get the currently selected start date from the form
+            const startDate = document.getElementById('taskStartDate').value;
+            
+            const response = await fetch('/api/parse-task', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    input,
+                    startDate  // Include the start date in the request
+                })
+            });
+
+            const taskDetails = await response.json();
+            console.log("Parsed task details:", taskDetails);  // Debug log
+
+            if (taskDetails.error) {
+                throw new Error(taskDetails.error);
+            }
+
+            if (taskDetails.description && taskDetails.description.startsWith('Error:')) {
+                console.error("LLM processing error:", taskDetails.description);
+                alert(`AI Processing Error: ${taskDetails.description.substring(7)}`);
+                return;
+            }
+
+            // Fill in the form with the parsed details
+            document.getElementById('taskTitle').value = taskDetails.title || taskDetails.description;
+            document.getElementById('taskStartDate').value = taskDetails.startDate;
+            document.getElementById('taskEndDate').value = taskDetails.endDate || '';
+            document.getElementById('taskDescription').value = taskDetails.description;
+            document.getElementById('taskTime').value = taskDetails.time || '';
+            
+            // Update color picker
+            const colorInput = document.getElementById('taskColor');
+            colorInput.value = taskDetails.color;
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.toggle('selected', option.dataset.color === taskDetails.color);
+            });
+
+            // Clear the natural language input
+            document.getElementById('nlInput').value = '';
+        } catch (error) {
+            console.error('Error parsing task:', error);
+            alert(`Failed to parse task: ${error.message}. Please try again or fill in the form manually.`);
+        }
     }
 }
 

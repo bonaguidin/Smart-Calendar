@@ -50,6 +50,10 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2 id="modalTitle">Add Task</h2>
+            <div class="natural-language-input">
+                <input type="text" id="nlInput" placeholder="Type your task in natural language...">
+                <button type="button" id="parseTask">Parse Task</button>
+            </div>
             <form id="taskForm">
                 <input type="hidden" id="taskId">
                 <div class="form-group">
@@ -62,13 +66,13 @@
                         <input type="date" id="taskStartDate" required>
                     </div>
                     <div>
-                        <label for="taskEndDate">End Date:</label>
+                        <label for="taskEndDate">End Date (optional):</label>
                         <input type="date" id="taskEndDate">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="taskTime">Time:</label>
-                    <input type="time" id="taskTime" required>
+                    <label for="taskTime">Time (optional):</label>
+                    <input type="time" id="taskTime">
                 </div>
                 <div class="form-group">
                     <label for="taskColor">Color:</label>
