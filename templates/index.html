@@ -7,6 +7,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <div id="introPopup" class="intro-popup" style="display: none;">
+        <div class="intro-content">
+            <h2>Welcome to Smart Calendar!</h2>
+            <ul>
+                <li>Create tasks easily using natural language - just type what you want to do!</li>
+                <li>Organize your schedule with color-coded tasks and date ranges</li>
+                <li>Toggle between light and dark themes for comfortable viewing</li>
+            </ul>
+            <button id="closeIntro">Got it!</button>
+        </div>
+    </div>
     <div class="container">
         <div class="calendar">
             <div class="calendar-header">
@@ -52,7 +63,7 @@
             <h2 id="modalTitle">Add Task</h2>
             <div class="natural-language-input">
                 <input type="text" id="nlInput" placeholder="Type your task in natural language...">
-                <button type="button" id="parseTask">Parse Task</button>
+                <button type="button" id="parseTask">Ask AI</button>
             </div>
             <form id="taskForm">
                 <input type="hidden" id="taskId">
@@ -87,8 +98,39 @@
                     <input type="hidden" id="taskColor" value="#007bff">
                 </div>
                 <div class="form-group">
-                    <label for="taskDescription">Description:</label>
+                    <label for="taskDescription">Description (optional):</label>
                     <textarea id="taskDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="taskRecurrence">Recurrence:</label>
+                    <select id="taskRecurrence">
+                        <option value="">No recurrence</option>
+                        <option value="every day">Every day</option>
+                        <option value="every other day">Every other day</option>
+                        <option value="every week">Every week</option>
+                        <option value="every other week">Every other week</option>
+                        <option value="every month">Every month</option>
+                        <optgroup label="Weekly">
+                            <option value="every monday">Every Monday</option>
+                            <option value="every tuesday">Every Tuesday</option>
+                            <option value="every wednesday">Every Wednesday</option>
+                            <option value="every thursday">Every Thursday</option>
+                            <option value="every friday">Every Friday</option>
+                            <option value="every saturday">Every Saturday</option>
+                            <option value="every sunday">Every Sunday</option>
+                        </optgroup>
+                        <optgroup label="Monthly">
+                            <option value="every first monday">Every First Monday</option>
+                            <option value="every second tuesday">Every Second Tuesday</option>
+                            <option value="every third wednesday">Every Third Wednesday</option>
+                            <option value="every fourth thursday">Every Fourth Thursday</option>
+                            <option value="every last friday">Every Last Friday</option>
+                        </optgroup>
+                    </select>
+                    <div id="recurrenceEndContainer" style="display: none;">
+                        <label for="recurrenceEnd">Repeat Until:</label>
+                        <input type="date" id="recurrenceEnd">
+                    </div>
                 </div>
                 <div class="form-buttons">
                     <button type="submit">Save</button>

@@ -15,6 +15,9 @@ class Calendar {
         // Additional event listeners
         document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
         this.setupColorPicker();
+        
+        // Add this at the end of the constructor
+        this.showIntroductionPopup();
     }
 
     setupEventListeners() {
@@ -39,6 +42,12 @@ class Calendar {
 
         // Add natural language parsing
         document.getElementById('parseTask').addEventListener('click', () => this.handleNaturalLanguageInput());
+
+        // Add this to show/hide recurrence end date based on selection
+        document.getElementById('taskRecurrence').addEventListener('change', function() {
+            const recurrenceEndContainer = document.getElementById('recurrenceEndContainer');
+            recurrenceEndContainer.style.display = this.value ? 'block' : 'none';
+        });
     }
 
     async loadTasks() {
@@ -93,13 +102,17 @@ class Calendar {
         const taskList = document.querySelector(`.task-list[data-date="${dateStr}"]`);
         if (this.tasks[dateStr]) {
             taskList.innerHTML = this.tasks[dateStr]
-                .map(task => {
+                .map((task, index) => {
                     const taskColor = task.color || '#007bff';
                     const rgbColor = this.hexToRGB(taskColor);
                     return `
                         <div class="task-item" 
-                             onclick="event.stopPropagation(); calendar.showTaskModal('${dateStr}', ${task.id})"
-                             style="--task-color: ${taskColor}; --task-rgb: ${rgbColor}; --task-text-color: ${this.getContrastColor(taskColor)}">
+                             onclick="event.stopPropagation(); calendar.showTaskModal('${dateStr}', '${task.group_id}')"
+                             style="--task-color: ${taskColor}; 
+                                    --task-rgb: ${rgbColor}; 
+                                    --task-text-color: ${this.getContrastColor(taskColor)};
+                                    --task-index: ${index}"
+                             title="Title: ${task.title}\nDescription: ${task.description}\nStart: ${task.startDate}\nEnd: ${task.endDate}">
                             ${task.title}
                         </div>
                     `;
@@ -107,24 +120,51 @@ class Calendar {
         }
     }
 
-    showTaskModal(date, taskId = null) {
+    showTaskModal(date, groupId = null) {
         event.stopPropagation();
-        console.log("Opening modal for date:", date, "taskId:", taskId); // Debug log
-        const task = taskId !== null ? this.tasks[date].find(t => t.id === taskId) : null;
+        console.log("Opening modal for date:", date, "groupId:", groupId);
+        const task = groupId !== null ? this.tasks[date].find(t => t.group_id === groupId) : null;
         
         document.getElementById('modalTitle').textContent = task ? 'Edit Task' : 'Add Task';
-        document.getElementById('taskId').value = taskId !== null ? taskId : '';
+        const taskIdInput = document.getElementById('taskId');
+        taskIdInput.value = groupId || '';  // Store group_id in the input
         
-        // Use the date directly without formatting
-        document.getElementById('taskStartDate').value = task ? task.startDate : date;
-        document.getElementById('taskEndDate').value = task ? task.endDate : date;
+        // Format dates with day of week
+        const formatDateWithDay = (dateStr) => {
+            const date = new Date(dateStr);
+            const day = date.toLocaleDateString('en-US', { weekday: 'short' });
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const dayNum = String(date.getDate()).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}, ${month}/${dayNum}/${year}`;
+        };
+
+        const startDateInput = document.getElementById('taskStartDate');
+        const endDateInput = document.getElementById('taskEndDate');
+        
+        startDateInput.value = task ? task.startDate : date;
+        endDateInput.value = task ? task.endDate : date;
+        
+        // Add formatted dates as placeholders
+        startDateInput.placeholder = formatDateWithDay(task ? task.startDate : date);
+        endDateInput.placeholder = formatDateWithDay(task ? task.endDate : date);
         
         document.getElementById('taskTitle').value = task ? task.title : '';
         document.getElementById('taskTime').value = task ? task.time : '';
         document.getElementById('taskDescription').value = task ? task.description : '';
         document.getElementById('taskColor').value = task ? task.color : '#007bff';
         
-        // Update color picker selection
+        // Set recurrence if it exists
+        if (task && task.recurrence) {
+            document.getElementById('taskRecurrence').value = task.recurrence;
+            document.getElementById('recurrenceEnd').value = task.recurrenceEnd || '';
+            document.getElementById('recurrenceEndContainer').style.display = 'block';
+        } else {
+            document.getElementById('taskRecurrence').value = '';
+            document.getElementById('recurrenceEnd').value = '';
+            document.getElementById('recurrenceEndContainer').style.display = 'none';
+        }
+        
         document.querySelectorAll('.color-option').forEach(option => {
             option.classList.toggle('selected', option.dataset.color === (task ? task.color : '#007bff'));
         });
@@ -137,100 +177,97 @@ class Calendar {
         e.preventDefault();
         console.log("Form submission started");
 
-        const taskId = document.getElementById('taskId').value;
+        const groupId = document.getElementById('taskId').value;
         const startDate = new Date(document.getElementById('taskStartDate').value);
         const endDate = document.getElementById('taskEndDate').value 
             ? new Date(document.getElementById('taskEndDate').value) 
             : startDate;
         const time = document.getElementById('taskTime').value || '';
+        const recurrence = document.getElementById('taskRecurrence').value;
+        const recurrenceEnd = document.getElementById('recurrenceEnd').value;
 
-        startDate.setDate(startDate.getDate() + 1);
-        endDate.setDate(endDate.getDate() + 1);
-
-        console.log("Form values:", { startDate, endDate, time, taskId });
+        console.log("Form values:", { startDate, endDate, time, groupId, recurrence, recurrenceEnd });
 
         const task = {
             title: document.getElementById('taskTitle').value,
             time: time,
             description: document.getElementById('taskDescription').value,
             color: document.getElementById('taskColor').value,
-            startDate: startDate.toISOString().split('T')[0], // YYYY-MM-DD in local time
-            endDate: endDate.toISOString().split('T')[0]
+            startDate: startDate.toISOString().split('T')[0],
+            endDate: endDate.toISOString().split('T')[0],
+            recurrence: recurrence || null,
+            recurrenceEnd: recurrence ? (recurrenceEnd || null) : null,
+            group_id: groupId || String(Date.now())
         };
 
         console.log("Task object created:", task);
 
         try {
-            const dates = endDate ? this.getDatesBetween(startDate, endDate) : [startDate];
-            console.log("Dates to create tasks for:", dates);
-
-            for (const date of dates) {
-                const url = taskId ? 
-                    `/api/tasks/${date}/${taskId}` : 
-                    '/api/tasks';
-                const method = taskId ? 'PUT' : 'POST';
-
-                console.log(`Making ${method} request to ${url}`);
-                
-                const response = await fetch(url, {
-                    method: method,
+            let response;
+            if (groupId) {
+                // Update existing task
+                console.log(`Updating task with group_id: ${groupId}`);
+                response = await fetch(`/api/tasks/${task.startDate}/${groupId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(task)
+                });
+            } else {
+                // Create new task
+                response = await fetch('/api/tasks', {
+                    method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         ...task,
-                        date: date,  // Use the same date for both storage and display
-                        startDate: date,  // Ensure startDate matches the current date
-                        endDate: endDate || date  // If no endDate, use the current date
+                        date: task.startDate
                     })
                 });
-
-                const result = await response.json();
-                console.log(`Server response for ${date}:`, result);
             }
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to save task');
+            }
+
+            const result = await response.json();
+            console.log("Server response:", result);
 
             await this.loadTasks();
             this.modal.style.display = "none";
         } catch (error) {
             console.error('Error saving task:', error);
+            alert(`Failed to save task: ${error.message}`);
         }
     }
 
     async handleTaskDelete() {
-        const taskId = document.getElementById('taskId').value;
-        // Get the date from the tasks object where the task actually exists
-        let taskDate = null;
+        const groupId = document.getElementById('taskId').value;
         
-        // Find the actual date where the task exists
-        for (const [date, tasks] of Object.entries(this.tasks)) {
-            if (tasks.find(t => t.id === parseInt(taskId))) {
-                taskDate = date;
-                break;
-            }
-        }
-        
-        console.log("Found task to delete:", { taskDate, taskId }); // Debug log
-        
-        if (!taskDate || !taskId) {
-            console.error('Missing required data for deletion');
+        console.log("Delete requested for task group:", groupId);
+
+        if (!groupId) {
+            console.error('Missing group_id for deletion');
             return;
         }
 
         if (confirm('Are you sure you want to delete this task?')) {
             try {
-                // Handle single task deletion
-                console.log(`Attempting to delete task for date: ${taskDate}`);
-                const response = await fetch(`/api/tasks/${taskDate}/${taskId}`, {
-                    method: 'DELETE'
+                console.log(`Attempting to delete task group: ${groupId}`);
+                const response = await fetch(`/api/tasks/${groupId}`, {
+                    method: 'DELETE',
+                    headers: {'Content-Type': 'application/json'}
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`Failed to delete task. Server returned ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to delete task');
                 }
                 
                 await this.loadTasks();
                 this.modal.style.display = "none";
             } catch (error) {
-                console.error('Error deleting task:', error);
-                alert('Failed to delete task. Please try again.');
+                console.error('Error deleting task group:', error);
+                alert('Failed to delete task group. Please try again.');
             }
         }
     }
@@ -372,6 +409,19 @@ class Calendar {
             document.getElementById('taskDescription').value = taskDetails.description;
             document.getElementById('taskTime').value = taskDetails.time || '';
             
+            // Set recurrence fields if present
+            const recurrenceSelect = document.getElementById('taskRecurrence');
+            if (taskDetails.recurrence) {
+                recurrenceSelect.value = taskDetails.recurrence;
+                // Trigger the change event to show/hide the recurrence end date field
+                recurrenceSelect.dispatchEvent(new Event('change'));
+                
+                // Set recurrence end date if present
+                if (taskDetails.recurrenceEnd) {
+                    document.getElementById('recurrenceEnd').value = taskDetails.recurrenceEnd;
+                }
+            }
+            
             // Update color picker
             const colorInput = document.getElementById('taskColor');
             colorInput.value = taskDetails.color;
@@ -386,10 +436,30 @@ class Calendar {
             alert(`Failed to parse task: ${error.message}. Please try again or fill in the form manually.`);
         }
     }
+
+    showIntroductionPopup() {
+        // Check if this is a new session
+        if (!localStorage.getItem('hasSeenIntroduction')) {
+            const introPopup = document.getElementById('introPopup');
+            introPopup.style.display = 'flex';
+
+            document.getElementById('closeIntro').addEventListener('click', () => {
+                introPopup.style.display = 'none';
+                localStorage.setItem('hasSeenIntroduction', 'true');
+            });
+        }
+    }
 }
 
 // Initialize the calendar when the page loads
 let calendar;
 document.addEventListener('DOMContentLoaded', () => {
     calendar = new Calendar();
+});
+
+document.body.addEventListener("pointermove", (e) => {
+    const { currentTarget: el, clientX: x, clientY: y } = e;
+    const { top: t, left: l, width: w, height: h } = el.getBoundingClientRect();
+    el.style.setProperty('--posX', x - l - w / 2);
+    el.style.setProperty('--posY', y - t - h / 2);
 }); 

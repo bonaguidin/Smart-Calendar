@@ -78,21 +78,31 @@ def parse_tasks_from_input(user_input, start_date=None):
         You are a helpful assistant that parses calendar tasks from user input.
         
         TEMPORAL CONTEXT:
-        - Today's date is: {start_date}
+        - Today's date is: {current_date}
         - End of this week: {end_of_week}
         - Next week: {next_week}
         
         When parsing dates from the input:
-        - Use {current_date} as the default start_date if no specific date is mentioned
+        - Use {start_date} as the default start_date if no specific date is mentioned
         - For phrases like "end of the week", use {end_of_week}
-        - For phrases like "next week", use {next_week} as the end date
-        - For phrases like "tomorrow", add one day to {current_date}
         - For phrases mentioning specific days (e.g., "next Monday"), calculate relative to {current_date}
+
+        RECURRENCE PATTERNS to detect:
+        - "every day" or "daily"
+        - "every other day"
+        - "every week" or "weekly"
+        - "every other week" or "bi-weekly"
+        - "every month" or "monthly"
+        - "every [day of week]" (e.g., "every Monday")
+        - "every [ordinal] [day of week]" (e.g., "every first Monday")
+        - "every last [day of week]"
 
         Extract the following details and return them in JSON format:
         - description: The task description
-        - start_date: The start date in YYYY-MM-DD format (default to {current_date} if not specified)
-        - end_date: The end date in YYYY-MM-DD format (default to start_date if not specified)
+        - start_date: The start_date in YYYY-MM-DD format (default to {start_date} if not specified)
+        - end_date: The end_date in YYYY-MM-DD format (default to start_date if not specified)
+        - recurrence: The recurrence pattern if detected (use exact phrases from the RECURRENCE PATTERNS list)
+        - recurrence_end: The end date for recurrence in YYYY-MM-DD format (if specified)
         - color: A hex color code based on task type:
           * #ff4444 (red) for urgent/important tasks
           * #4CAF50 (green) for routine/regular tasks
@@ -100,6 +110,11 @@ def parse_tasks_from_input(user_input, start_date=None):
           * #FF9800 (orange) for deadlines/due dates
           * #9C27B0 (purple) for personal/leisure tasks
           * #3498db (default blue) for other tasks
+
+        For recurring tasks:
+        - If it's a recurring task, set appropriate end_date based on context
+        - If no recurrence end is specified, don't set recurrence_end
+        - Use the exact recurrence pattern phrases as listed above
 
         Return the response as a single JSON object, not an array.
         """
@@ -120,10 +135,8 @@ def parse_tasks_from_input(user_input, start_date=None):
             
             # Try to parse JSON from the response
             try:
-                # First try direct JSON parsing
                 parsed_response = json.loads(llm_response)
             except json.JSONDecodeError:
-                # If direct parsing fails, try to extract JSON from text
                 json_match = re.search(r'\{.*\}', llm_response, re.DOTALL)
                 if json_match:
                     try:
@@ -139,15 +152,22 @@ def parse_tasks_from_input(user_input, start_date=None):
                 "start_date": parsed_response.get("start_date", today),
                 "end_date": parsed_response.get("end_date", parsed_response.get("start_date", today)),
                 "color": parsed_response.get("color", "#3498db"),
+                "recurrence": parsed_response.get("recurrence", None),
+                "recurrence_end": parsed_response.get("recurrence_end", None),
+                "group_id": str(datetime.now().timestamp())
             }
 
             # Validate dates
             try:
                 datetime.strptime(task_details["start_date"], "%Y-%m-%d")
-                datetime.strptime(task_details["end_date"], "%Y-%m-%d")
+                if task_details["end_date"]:
+                    datetime.strptime(task_details["end_date"], "%Y-%m-%d")
+                if task_details["recurrence_end"]:
+                    datetime.strptime(task_details["recurrence_end"], "%Y-%m-%d")
             except ValueError:
                 task_details["start_date"] = today
                 task_details["end_date"] = today
+                task_details["recurrence_end"] = None
 
             return task_details
 
@@ -166,7 +186,8 @@ def create_fallback_task(error_message):
         "description": f"Error: {error_message}",
         "start_date": today,
         "end_date": today,
-        "color": "#dc3545"  # Red color for error
+        "color": "#dc3545",  # Red color for error
+        "group_id": str(datetime.now().timestamp())  # Add group_id to fallback tasks too
     }
 
 def parse_user_input(user_input):
