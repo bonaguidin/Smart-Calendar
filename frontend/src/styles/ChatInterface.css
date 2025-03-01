@@ -1,0 +1,215 @@
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 60px;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.message {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    animation: messageAppear 0.3s ease-out;
+}
+
+.message.user {
+    align-self: flex-end;
+    background-color: #007AFF;
+    color: white;
+}
+
+.message.assistant {
+    align-self: flex-start;
+    background-color: #E9ECEF;
+    color: #212529;
+}
+
+.message-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.suggestion-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    background-color: #007AFF;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.suggestion-button:hover {
+    background-color: #0056b3;
+}
+
+/* New styles for follow-up questions */
+.follow-up-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.follow-up-question {
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+    border-left: 3px solid #007AFF;
+}
+
+.follow-up-question:hover {
+    background-color: #e9ecef;
+    transform: translateX(4px);
+}
+
+/* Task preview styles */
+.task-preview {
+    margin-top: 12px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.task-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.task-title {
+    font-weight: 500;
+    color: #212529;
+}
+
+.task-date {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.confirm-button {
+    width: 100%;
+    padding: 8px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+    font-weight: 500;
+}
+
+.confirm-button:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.confirm-button.edit-confirm {
+    background-color: #007bff;
+}
+
+.confirm-button.edit-confirm:hover {
+    background-color: #0056b3;
+}
+
+.confirm-button.delete-confirm {
+    background-color: #dc3545;
+}
+
+.confirm-button.delete-confirm:hover {
+    background-color: #c82333;
+}
+
+/* Add styles for color-formatted text */
+.color-text {
+    font-weight: 500;
+    padding: 0 4px;
+    border-radius: 3px;
+}
+
+.color-text.blue { color: #2196F3; }
+.color-text.green { color: #4CAF50; }
+.color-text.purple { color: #9C27B0; }
+.color-text.orange { color: #FF9800; }
+.color-text.red { color: #F44336; }
+.color-text.teal { color: #009688; }
+.color-text.pink { color: #E91E63; }
+
+/* Chat input styles */
+.chat-input-form {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 16px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.chat-input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    outline: none;
+    border-color: #007AFF;
+}
+
+.send-button {
+    background-color: #007AFF;
+    border: none;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover {
+    background-color: #0056b3;
+}
+
+.send-icon {
+    width: 24px;
+    height: 24px;
+    fill: white;
+}
+
+@keyframes messageAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

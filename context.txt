@@ -1,0 +1,528 @@
+# Smart Calendar Project Overview
+
+## Project Structure
+The project follows a client-server architecture with React frontend and Flask backend.
+
+## Backend Components
+
+### Main Server [main.py]
+- Core Flask server implementation
+- Handles HTTP endpoints for task management
+- Implements task CRUD operations
+- Manages task scheduling and recurrence
+- Provides API endpoints for task parsing and editing
+- Handles conversational intents and responses through intent detection
+- Routes conversational queries to LLM for dynamic responses
+- Integrates with PostgreSQL database for persistent storage
+- Implements user authentication with JWT
+- Provides location-based API endpoints for weather and traffic
+- Uses Flask-Migrate for database schema management
+
+Key Functions:
+- `find_relevant_task(user_query, tasks_dict)`: Matches tasks based on user queries with relevance scoring
+- `parse_task()`: Handles task parsing and conversational responses
+- `add_task()`: Creates new tasks with timezone awareness
+- `update_task_by_group_id(group_id)`: Updates all instances of a task
+- `delete_task_group(group_id)`: Removes all instances of a task
+- `create_recurring_instances(task)`: Generates instances for recurring tasks
+- `calculate_next_occurrence(current_date, recurrence_pattern)`: Determines next task occurrence
+- `get_weather(current_user)`: Retrieves weather forecast for a location
+- `get_traffic(current_user)`: Gets traffic info between locations
+- `search_location(current_user)`: Searches for location coordinates
+- `get_task_location_data(current_user, task_id)`: Gets location data for a specific task
+
+### Database Configuration [database.py]
+- Manages PostgreSQL database connection
+- Handles SQLAlchemy configuration
+- Implements database migration support with Flask-Migrate
+- Provides graceful error handling for database operations
+- Supports development and production database configurations
+
+Key Functions:
+- `init_db(app)`: Initializes database connection with app context
+- `db`: SQLAlchemy instance for database operations
+
+### Database Migrations [migrations/]
+- Alembic migration scripts
+- Version control for database schema
+- Supports schema evolution
+- Enables safe database updates
+- Tracks schema change history
+
+Key Files:
+- `env.py`: Alembic environment configuration
+- `script.py.mako`: Migration script template
+- `versions/`: Individual migration scripts
+
+### App Configuration [app.py]
+- Exposes Flask application for migrations
+- Simplifies Flask-Migrate configuration
+- Prevents duplicate SQLAlchemy initialization
+- Supports CLI commands for database operations
+
+### Models [models.py]
+- Defines SQLAlchemy data models
+- Implements User, Task, and Preferences models
+- Provides data validation methods
+- Handles database relationships
+- Contains serialization methods for API responses
+
+Key Models:
+- `User`: User profile with authentication and preferences
+- `UserPreference`: User settings for UI and features
+- `Task`: Calendar tasks with recurrence and location support
+
+### Authentication [auth.py]
+- Implements JWT-based authentication
+- Handles user registration and login
+- Manages user profile operations
+- Provides middleware for protected routes
+- Secures API endpoints with token verification
+
+Key Functions:
+- `create_token(user_id, expires_in)`: Creates JWT token for authentication
+- `token_required`: Decorator for protected routes
+- `register()`: Creates new user accounts
+- `login()`: Authenticates users and issues tokens
+- `get_profile()`: Retrieves user profile data
+- `update_profile()`: Updates user preferences
+- `change_password()`: Updates user password securely
+- `logout()`: Handles user session termination
+
+### Location Services [location_services.py]
+- Provides geocoding for addresses
+- Integrates with weather forecast APIs
+- Implements traffic and routing functionality
+- Caches responses for improved performance
+- Handles API error conditions gracefully
+
+Key Functions:
+- `geocode_location(location_query)`: Converts location string to coordinates
+- `get_weather_forecast(location, days)`: Retrieves weather data
+- `get_traffic_estimate(origin, destination)`: Gets route and traffic info
+
+### Intent Detector [intent_detector.py]
+- Detects user intents from natural language inputs
+- Classifies inputs as conversational or task-related
+- Routes conversational intents to LLM for dynamic responses
+- Handles various conversational patterns
+
+Key Functions:
+- `detect_intent(user_input)`: Determines if input is conversational or task-related
+
+### LLM Handler [llm_handler.py]
+- Manages interactions with the language model
+- Processes natural language task inputs
+- Handles task parsing and edit requests
+- Implements structured response generation
+- Generates dynamic conversational responses
+- Uses hybrid approach with local regex parsing for simple tasks
+- Maintains proper separation between task and conversational responses
+
+Key Functions:
+- `create_openai_client()`: Initializes OpenAI client with SambaNova configuration
+- `generate_structured_response(prompt_template, schema)`: Generates optimized validated LLM responses
+- `parse_tasks_from_input(user_input, start_date)`: Uses hybrid approach - local parsing for simple cases, LLM for complex ones
+- `parse_user_input(user_input, start_date)`: Local regex-based parser for common task patterns
+- `parse_edit_query(user_input, original, context)`: Processes edit requests with optimized prompts
+- `is_edit_request(user_input)`: Detects if input is requesting task modification
+- `generate_conversational_response(user_input)`: Creates concise conversational responses with proper is_conversational flag
+
+### Task Editor [task_editor.py]
+- Handles task modification operations
+- Manages task update logic
+- Implements task validation
+- Handles recurring task patterns
+
+Key Classes:
+- `EditRequest`: Dataclass for edit request handling
+- `EditResult`: Dataclass for edit operation results
+- `TaskEditor`: Main class for task editing operations
+
+Key Functions:
+- `process_edit(request)`: Processes edit requests with validation
+- `parse_edit_request(input_text, original_task)`: Parses natural language edits
+- `_handle_absolute_time(time_str, original_task)`: Processes absolute time changes
+- `_handle_relative_time(direction, amount, unit, original_task)`: Handles relative time shifts
+- `_validate_changes(edit_ops, original_task)`: Validates proposed changes
+
+### JSON Validator [json_validator.py]
+- Validates JSON responses from LLM
+- Ensures data structure consistency
+- Implements schema validation with minimal overhead
+- Handles error formatting
+- Optimized for token efficiency
+
+Key Methods:
+- `extract_json(raw)`: Efficiently extracts JSON from text using targeted regex
+- `validate_data(data, schema)`: Performs lightweight schema validation
+- `clean_and_validate(raw_text, schema, context)`: Streamlined validation process
+
+### Timezone Handler [timezone_handler.py]
+- Manages timezone conversions
+- Handles date/time formatting
+- Provides timezone-aware operations
+- Ensures consistent date handling
+
+### Schemas [schemas.py]
+- Defines JSON schemas for task data
+- Specifies validation rules
+- Defines required fields and types
+- Maintains data structure consistency
+
+### Task Matcher [task_matcher.py]
+- Implements fuzzy matching for tasks
+- Handles task search and identification
+- Provides relevance scoring
+- Supports edit request matching
+
+### Edit Detector [edit_detector.py]
+- Detects edit intentions in user input
+- Identifies edit operations
+- Classifies edit types
+- Supports natural language processing
+
+### Edit History [edit_history.py]
+- Tracks task modification history
+- Maintains audit trail
+- Supports undo/redo operations
+- Records change metadata
+
+## Frontend Components
+
+### React Components
+
+#### ChatInterface [components/ChatInterface.jsx]
+- Main chat interface component
+- Handles user input processing
+- Manages message display
+- Implements task confirmation flow
+- Handles edit/delete operations
+
+Key Functions:
+- `handleSubmit(e)`: Processes user input and sends to backend
+- `handleEditRequest(editData)`: Manages task edit requests
+- `handleTaskConfirmation()`: Confirms task creation/modification
+- `handleEditConfirmation()`: Confirms edit operations
+- `formatAIResponse(data)`: Formats AI responses for display
+
+State Management:
+- `messages`: Array of chat messages
+- `pendingTask`: Currently pending task
+- `pendingEdit`: Currently pending edit
+- `inputValue`: Current input field value
+
+#### TaskEditor [components/TaskEditor.jsx]
+- Task editing interface
+- Manages task modification
+- Handles date/time inputs
+- Supports color selection
+- Implements delete functionality
+
+Key Functions:
+- `handleSubmit(e)`: Processes task updates
+- `handleDelete(e)`: Handles task deletion
+- `validateDates()`: Validates date inputs
+
+Constants:
+- `COLOR_OPTIONS`: Predefined color choices for tasks
+
+#### TaskForm [components/TaskForm.jsx]
+- New task creation form
+- Handles task input validation
+- Manages date/time selection
+- Implements color options
+- Supports task submission
+
+Key Functions:
+- `handleSubmit(e)`: Creates new tasks
+- `validateDates()`: Validates date selections
+
+State Management:
+- `taskData`: Current task form data
+- `dateError`: Date validation error state
+
+### Context Management
+
+#### CalendarContext [context/CalendarContext.jsx]
+- Manages global calendar state
+- Handles task data operations
+- Provides task CRUD functions
+- Manages calendar view state
+- Implements task synchronization
+- Integrates with AuthContext for authentication token management
+- Includes automatic task loading from backend when authenticated
+
+Key Functions:
+- `addTask(task, isManualAdd)`: Adds new tasks to calendar with proper authentication
+- `updateTask(date, groupId, updatedTask)`: Updates existing tasks with auth token
+- `deleteTask(groupId)`: Removes tasks from calendar with auth credentials
+- `getTasksForDate(date)`: Retrieves tasks for specific date
+- Initial loading effect that fetches tasks from the server when authenticated
+
+State Management:
+- `tasks`: Global task storage
+- `currentDate`: Currently selected date
+- `isCalendarExpanded`: Calendar view state
+- `selectedTask`: Currently selected task
+- Uses auth token from AuthContext for all API requests
+
+#### AuthContext [context/AuthContext.jsx]
+- Authentication context provider for user authentication state management
+- Provides user information, token handling, and auth methods (login, register, logout)
+- Includes functions for profile updates and password changes
+- Automatically checks for existing tokens on initial load
+- Handles secure token storage in localStorage
+- Exposes authentication token to other contexts and components
+
+### Styles
+
+#### ChatInterface.css [styles/ChatInterface.css]
+Key Classes:
+- `.chat-container`: Main chat interface container
+- `.message`: Message styling
+- `.confirm-button`: Confirmation button styles
+- `.task-preview`: Task preview card styles
+
+#### TaskEditor.css [styles/TaskEditor.css]
+Key Classes:
+- `.task-form`: Task form container
+- `.form-group`: Form field grouping
+- `.color-options`: Color selector styling
+- `.confirm-button`: Action button styles
+
+## Additional Components
+
+### MinimizedCalendar [components/MinimizedCalendar.jsx]
+- Collapsible calendar interface
+- Task visualization
+- Date selection
+- Task management integration
+
+Key Functions:
+- `handleDateClick(e, date)`: Handles date selection
+- `handleTaskClick(e, task)`: Manages task selection
+- `renderCalendarGrid()`: Renders calendar view
+- `getDaysInMonth(date)`: Calculates days in month
+
+### AITaskEditor [components/AITaskEditor.jsx]
+- AI-powered task editing interface
+- Change visualization
+- Selective change application
+- Animation effects
+
+Key Functions:
+- `handleChangeSelection(changeId)`: Manages change selection
+- `handleApplyChanges()`: Applies selected changes
+- `renderDiff(original, modified, type)`: Visualizes changes
+
+## Configuration Files
+
+### Package Configuration [package.json]
+- Node.js dependencies
+- Build scripts
+- Project metadata
+- Development tools
+
+### Requirements [requirements.txt]
+- Python dependencies
+- Backend packages
+- Development tools
+- Testing frameworks
+
+### Environment Variables [.env]
+- Database connection strings
+- API keys and credentials
+- Application configuration
+- Development settings
+
+## Project Documentation
+
+### README.md
+- Project overview
+- Setup instructions
+- Usage guidelines
+- Development notes
+
+## Key Features
+1. Natural Language Task Creation
+2. AI-Powered Task Editing
+3. Recurring Task Support
+4. Multi-day Task Handling
+5. Timezone-aware Scheduling
+6. Real-time Task Updates
+7. Interactive Chat Interface
+8. Task Color Coding
+9. Edit History Tracking
+10. Fuzzy Task Matching
+11. User Authentication & Profiles
+12. Weather Forecasts for Tasks
+13. Traffic Estimates for Locations
+14. Location-aware Scheduling
+
+## Data Flow
+1. User input → Chat Interface
+2. Natural language processing → LLM Handler
+3. Task parsing → Task Editor
+4. Data validation → JSON Validator
+5. State management → Calendar Context
+6. UI updates → React Components
+7. Persistent storage → PostgreSQL Database
+8. Location data → External Weather/Traffic APIs
+
+## State Management
+- Uses React Context for global state
+- Implements optimistic updates
+- Handles concurrent modifications
+- Maintains consistency across components
+- Supports real-time synchronization
+
+## Database Schema
+- Users table for account management
+- Tasks table for calendar items
+- UserPreferences for personalization
+- Relationships between users and tasks
+- Indexes for efficient queries
+
+## Integration Testing
+
+### Authentication Tests [test_auth.py]
+- Verifies user registration functionality
+- Tests login and token issuance
+- Validates profile retrieval and updates
+- Confirms password change functionality
+- Ensures proper error handling for invalid credentials
+- Validates JWT token-based authentication
+
+Key Functions:
+- `test_register()`: Tests user registration endpoint
+- `test_login()`: Verifies login functionality
+- `test_get_profile()`: Validates profile retrieval
+- `test_update_profile()`: Tests profile updates
+- `test_change_password()`: Confirms password change functionality
+
+### Task Management Tests [test_tasks.py]
+- Tests task creation through natural language input
+- Verifies task retrieval functionality
+- Validates task update operations
+- Tests task deletion functionality
+- Confirms AI-based task editing
+- Verifies task persistence in database
+
+Key Functions:
+- `login()`: Sets up authentication for tests
+- `test_create_task()`: Tests task creation
+- `test_get_tasks()`: Validates task retrieval
+- `test_update_task()`: Tests task updates
+- `test_delete_task()`: Confirms task deletion
+- `test_ai_task_edit()`: Tests AI editing functionality
+
+### Migration Testing
+- Validates database initialization
+- Tests migration creation with Flask-Migrate
+- Confirms migration application to database
+- Verifies table creation and structure
+- Tests database connection and configuration
+
+## Implementation Status
+- ✅ PostgreSQL database integration
+- ✅ Database models and relationships
+- ✅ User authentication with JWT
+- ✅ Database migration infrastructure
+- ✅ Authentication API endpoints
+- ⚠️ Task API endpoints (partially migrated to database)
+- ⚠️ AI-based task editing (requires fixes)
+- ⚠️ Location-based features (requires testing)
+- ❌ Frontend integration with database backend
+
+#### Database Integration Updates
+
+The following functions have been updated to work with database models instead of in-memory dictionaries:
+
+- `create_recurring_instances(task)`: Now creates Task model instances for recurring tasks and returns them as a list.
+  - Accepts a Task model instance as input rather than a dictionary
+  - Creates new Task objects with the same attributes as the base task but with different dates
+  - Returns a list of created instances that can be added to the database session
+  - Includes proper logging and error handling
+
+- The implementation now handles:
+  - Skipping the first occurrence (which is already covered by the base task)
+  - Creating appropriate recurring instances based on the recurrence pattern
+  - Setting appropriate metadata like group_id, day_number, and total_days
+  - Respecting the recurrence end date with a default of 3 months if not specified
+
+This allows for proper database-driven recurring task management and completes the PostgreSQL integration for the tasks functionality.
+
+## Frontend Authentication Components
+
+### AuthContext.jsx
+- Authentication context provider for user authentication state management
+- Provides user information, token handling, and auth methods (login, register, logout)
+- Includes functions for profile updates and password changes
+- Automatically checks for existing tokens on initial load
+- Handles secure token storage in localStorage
+
+### LoginPage.jsx
+- Form for user authentication with username/email and password fields
+- Includes form validation and error handling
+- "Remember me" functionality for persistent login
+- Redirects to dashboard on successful login
+- Links to registration page for new users
+
+### RegisterPage.jsx
+- User registration form with comprehensive validation
+- Fields for username, email, password, display name, and timezone
+- Password strength requirements and confirmation
+- Terms of service agreement checkbox
+- Creates user account and automatically logs in on success
+
+### UserProfile.jsx
+- Profile management interface with tabbed sections
+- Profile information display and editing
+- Password change functionality with current/new password validation
+- User preferences management for themes, views, and features
+- Responsive design for all device sizes
+
+### ProtectedRoute.jsx
+- Route wrapper to protect authenticated routes
+- Redirects unauthenticated users to login page
+- Preserves intended destination for post-login redirect
+- Displays loading state during authentication check
+
+## Frontend Components Updates
+
+### Header.jsx
+- Navigation header with user account dropdown menu
+- Displays user avatar and name when logged in
+- Provides links to profile settings, preferences, and logout
+- Shows login/register links when user is not authenticated
+- Responsive design that adapts to different screen sizes
+
+### ClearData.jsx
+- Dedicated page for clearing all user calendar data
+- Includes warning and confirmation dialog requiring explicit confirmation
+- Makes API request to the backend to delete all user tasks
+- Provides success/error feedback and option to return to dashboard
+- Prevents accidental data deletion with type-to-confirm mechanism
+
+### App.jsx Updates
+- Incorporated Header component for consistent navigation
+- Added Layout component to wrap pages with the Header
+- Added route for ClearData page
+- Improved routing structure for better user experience
+
+### Backend Endpoints Additions
+- Added `/api/tasks/clear-all` endpoint for deleting all user tasks
+- Implemented proper error handling and transaction management
+- Returns count of deleted tasks and success status
+
+These updates provide a complete user account management experience with intuitive access to profile settings, preferences, and data management options.
+
+## Recent Updates
+
+### Authentication Integration with Calendar Functions
+- Fixed 401 (UNAUTHORIZED) errors in task creation and management
+- Added authentication token integration to all calendar API requests
+- Implemented automatic task loading from backend when user is authenticated
+- Ensured consistent authentication header format across all endpoints
+- Improved error handling for authentication-related issues

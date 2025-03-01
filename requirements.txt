@@ -9,3 +9,12 @@ six==1.16.0
 openai==1.59.8
 httpx==0.24.1
 sambanova==0.3.1
+flask-cors==4.0.0
+pytz==2024.1
+jsonschema==4.19.0
+python-dotenv>=1.0.1
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.5
+psycopg2-binary==2.9.9
+PyJWT==2.8.0
+

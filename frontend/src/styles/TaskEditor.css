@@ -1,0 +1,207 @@
+/* Main form container - adjust max-width to change form size */
+.task-form {
+    background-color: white;
+    padding: 32px;  /* Increased padding for more breathing room */
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;  /* Increased for better readability */
+    margin: 30px auto;
+    height: 120%;
+    position: center;  /* For positioning elements relative to form */
+}
+
+/* Form header styling - adjust margin and font-size to change header appearance */
+.task-form h3 {
+    margin: 0 0 24px;  /* Increased bottom margin */
+    color: #333;
+    font-size: 1.75rem;  /* Larger font size */
+    font-weight: 600;
+    text-align: left;  /* Center the header */
+}
+
+/* Individual form group styling - adjust margin for vertical spacing between elements */
+.form-group {
+    margin-bottom: 24px;  /* Increased for better spacing */
+    width: 95%;  /* Ensure full width */
+}
+
+/* Label styling - adjust margin and font-size for label appearance */
+.form-group label {
+    display: block;
+    margin-bottom: 10px;  /* Increased space between label and input */
+    color: #555;
+    font-weight: 500;
+    font-size: 0.95rem;  /* Slightly larger font */
+}
+
+/* Input field styling - adjust padding and font-size for input appearance */
+.form-group input[type="text"],
+.form-group input[type="time"],
+.form-group input[type="date"],
+.form-group textarea {
+    width: 100%;
+    padding: 12px 16px;  /* Increased padding */
+    border: 1px solid #ddd;
+    border-radius: 8px;  /* Slightly larger radius */
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background-color: #f8f9fa;  /* Light background for inputs */
+}
+
+/* Input focus states - customize the focus appearance */
+.form-group input[type="text"]:focus,
+.form-group input[type="time"]:focus,
+.form-group input[type="date"]:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007AFF;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);  /* Subtle focus shadow */
+}
+
+/* Textarea specific styling - adjust height as needed */
+.form-group textarea {
+    min-height: 100px;  /* Set minimum height */
+    resize: vertical;  /* Allow vertical resizing only */
+}
+
+/* Row layout for side-by-side elements - adjust gap for spacing between elements */
+.form-row {
+    display: flex;
+    gap: 60px;  /* Increased gap between elements */
+    margin-bottom: 24px;
+    width: 60%;
+}
+
+/* Half-width elements - adjust width percentage to change element size */
+.half-width {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 0;  /* Prevent flex items from overflowing */
+}
+
+/* Error message styling - adjust colors and spacing */
+.error-message {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: -16px;  /* Pull up closer to the input */
+    margin-bottom: 16px;
+    padding: 4px 8px;
+    background-color: rgba(220, 53, 69, 0.1);  /* Light error background */
+    border-radius: 4px;
+}
+
+/* Color options container - adjust gap for spacing between colors */
+.color-options {
+    display: flex;
+    gap: 12px;  /* Increased gap */
+    flex-wrap: wrap;
+    padding: 8px;  /* Added padding */
+}
+
+/* Individual color option - adjust size and hover effects */
+.color-option {
+    width: 36px;  /* Slightly larger */
+    height: 36px;  /* Slightly larger */
+    border-radius: 18px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Color option hover and selected states */
+.color-option:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-option.selected {
+    border-color: #333;
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Button container - adjust gap for spacing between buttons */
+.form-buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px;  /* Increased top margin */
+    justify-content: flex-end;  /* Align buttons to the right */
+}
+
+/* Common button styles - adjust padding and font-size for button size */
+.submit-button,
+.delete-button,
+.cancel-button {
+    padding: 12px 24px;  /* Increased padding */
+    border: none;
+    border-radius: 8px;  /* Larger radius */
+    font-weight: 500;
+    font-size: 1rem;  /* Slightly larger font */
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Primary action button */
+.submit-button {
+    background-color: #007AFF;
+    color: white;
+    flex: 1;  /* Take up remaining space */
+    max-width: 200px;  /* Limit button width */
+}
+
+.submit-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Delete button */
+.delete-button {
+    background-color: #dc3545;
+    color: white;
+}
+
+.delete-button:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Cancel button */
+.cancel-button {
+    background-color: #6c757d;
+    color: white;
+}
+
+.cancel-button:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Media query for smaller screens */
+@media (max-width: 640px) {
+    .task-form {
+        padding: 20px;
+        margin: 10px;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .half-width {
+        width: 100%;
+    }
+
+    .form-buttons {
+        flex-direction: column;
+    }
+
+    .submit-button {
+        max-width: none;
+    }
+} 

@@ -1,0 +1,44 @@
+Metadata-Version: 2.1
+Name: sambanova
+Version: 0.3.1
+Summary: llama-index llms sambanova integration
+Author: Your Name
+Author-email: you@example.com
+Requires-Python: >=3.8.1,<4.0
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Dist: llama-index-core (>=0.11.0,<0.12.0)
+Requires-Dist: python-dotenv (>=1.0.1,<2.0.0)
+Description-Content-Type: text/markdown
+
+# LlamaIndex LLM Integration: SambaNova LLM
+
+SambaNovaLLM is a custom LLM (Language Model) interface that allows you to interact with AI models hosted on SambaNova's offerings - SambaNova Cloud and SambaStudio
+
+## Key Features:
+
+- Integration with SambaNova-hosted AI models
+- Integration two SambaNova offerings - SambaNova Cloud and SambaStudio
+- Support for completion based interactions
+- Streaming support for completion responses
+- Seamless integration with the LlamaIndex ecosystem
+
+## Installation
+
+```bash
+pip install llama-index-llms-sambanova
+```
+
+## Usage
+
+```python
+SambaNovaCloud(
+    sambanova_url="SambaNova cloud endpoint URL",
+    sambanova_api_key="set with your SambaNova cloud API key",
+    model="model name",
+)
+```
+
