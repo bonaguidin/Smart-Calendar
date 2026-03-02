@@ -27,7 +27,7 @@ def create_openai_client():
     try:
         logger.info("Creating OpenAI client with SambaNova configuration")
         client = openai.OpenAI(
-            api_key="94b96a77-df5b-4135-9447-5a593812cf07",
+            api_key="APIKEY",
             base_url="https://api.sambanova.ai/v1"
         )
         
